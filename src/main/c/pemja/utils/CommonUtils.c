@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <CommonUtils.h>
 
-#if (defined(_WIN32) || defined(_WIN64)) && defined(__MINGW32__)
+#if (defined(_WIN32) || defined(_WIN64))
     #include <windows.h>
     #include <Python.h>
     PyMODINIT_FUNC PyInit_pemja_utils(void) {

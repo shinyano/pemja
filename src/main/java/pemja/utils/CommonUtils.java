@@ -37,7 +37,7 @@ public class CommonUtils {
             "from find_libpython import find_libpython;" + "print(find_libpython())";
 
     private static final String GET_SITE_PACKAGES_PATH_SCRIPT =
-            "import sysconfig; print(sysconfig.get_paths()[\"purelib\"])";
+            "import sysconfig; print(sysconfig.get_paths()['purelib'])";
 
     private static final String GET_PEMJA_MODULE_PATH_SCRIPT =
             "import pemja;" + "import os;" + "print(os.path.dirname(pemja.__file__))";
@@ -114,6 +114,12 @@ public class CommonUtils {
                 for (File f : Objects.requireNonNull(libFile.listFiles())) {
                     if (f.isFile() && Pattern.matches(pattern, f.getName())) {
                         return f.getAbsolutePath();
+                    } else if (f.isDirectory() && Pattern.matches("^pemja-.*", f.getName())) {
+                        for (File innerFile : Objects.requireNonNull(f.listFiles())) {
+                            if (innerFile.isFile() && Pattern.matches(pattern, innerFile.getName())) {
+                                return innerFile.getAbsolutePath();
+                            }
+                        }
                     }
                 }
             }
