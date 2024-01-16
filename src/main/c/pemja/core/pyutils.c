@@ -860,35 +860,54 @@ JcpPyTuple_FromJObjectArray(JNIEnv* env, jobjectArray value)
 PyObject*
 JcpPyList_FromJListObject(JNIEnv* env, jobject value) {
 
-    int i = 0;
-    int size;
-
-    jobject iter;
-    jobject next;
-
-    PyObject* result;
-
     if (value == NULL) {
         Py_RETURN_NONE;
     }
 
-    iter = JavaIterable_iterator(env, value);
-    size = JavaCollection_size(env, value);
+    int outerSize = JavaCollection_size(env, value);
+    jobject outerIter = JavaIterable_iterator(env, value);
 
-    result = PyList_New(size);
-
-    if (result == NULL) {
+    PyObject* pyOuterList = PyList_New(outerSize);
+    if (pyOuterList == NULL) {
         return NULL;
     }
 
-    while(JavaIterator_hasNext(env, iter)) {
-        next = JavaIterator_next(env, iter);
-        PyList_SetItem(result, i++, JcpPyObject_FromJObject(env, next));
-        (*env)->DeleteLocalRef(env, next);
-    }
-    (*env)->DeleteLocalRef(env, iter);
+    jclass clazz = NULL;
+    jobject next, innerIter, javaElem;
+    int innerSize, i=0, j=0;
+    // for 2d list
+    while(JavaIterator_hasNext(env, outerIter)) {
+        next = JavaIterator_next(env, outerIter);
+        clazz = (*env)->GetObjectClass(env, next);
 
-    return result;
+        if ((*env)->IsAssignableFrom(env, clazz, JLIST_TYPE)) {
+            innerSize = JavaCollection_size(env, next);
+            innerIter = JavaIterable_iterator(env, next);
+
+            PyObject* pyInnerList = PyList_New(innerSize);
+            if (pyInnerList == NULL) {
+                Py_DECREF(pyOuterList);
+                return NULL;
+            }
+
+            j=0;
+            while(JavaIterator_hasNext(env, innerIter)) {
+                javaElem = JavaIterator_next(env, innerIter);
+                PyList_SetItem(pyInnerList, j++, JcpPyObject_FromJObject(env, javaElem));
+                (*env)->DeleteLocalRef(env, javaElem);
+            }
+            PyList_SetItem(pyOuterList, i++, pyInnerList);
+            (*env)->DeleteLocalRef(env, innerIter);
+        } else {
+            PyList_SetItem(pyOuterList, i++, JcpPyObject_FromJObject(env, next));
+        }
+        (*env)->DeleteLocalRef(env, next);
+        (*env)->DeleteLocalRef(env, clazz);
+    }
+
+    (*env)->DeleteLocalRef(env, outerIter);
+    return pyOuterList;
+
 }
 
 
@@ -1711,9 +1730,27 @@ JcpPyList_AsJObject(JNIEnv* env, PyObject* pyobject)
 
     list = JavaList_NewArrayList(env);
 
+    PyObject* pyElem;
+    jobject innerList;
+    int innerSize;
     for (int i = 0; i < length; i++) {
-        element = JcpPyObject_AsJObject(env, PyList_GetItem(pyobject, i), JOBJECT_TYPE);
-        JavaList_Add(env, list, element);
+        pyElem = PyList_GetItem(pyobject, i);
+        if (PyList_CheckExact(pyElem)) {
+            innerSize = PyList_Size(pyElem);
+            innerList = JavaList_NewArrayList(env);
+
+            for (int j = 0; j < innerSize; j++) {
+                element = JcpPyObject_AsJObject(env, PyList_GetItem(pyElem, j), JOBJECT_TYPE);
+                JavaList_Add(env, innerList, element);
+                (*env)->DeleteLocalRef(env, element);
+            }
+            JavaList_Add(env, list, innerList);
+            (*env)->DeleteLocalRef(env, innerList);
+        } else {
+            element = JcpPyObject_AsJObject(env, pyElem, JOBJECT_TYPE);
+            JavaList_Add(env, list, element);
+            (*env)->DeleteLocalRef(env, element);
+        }
     }
 
     return list;
