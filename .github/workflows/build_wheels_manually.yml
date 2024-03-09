@@ -7,10 +7,6 @@ on:
       - release/build_wheel
   pull_request:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
@@ -25,10 +21,15 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Set up JDK ${{ inputs.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install cibuildwheel
+          pip install -r dev/dev-requirements.txt
       - name: Build wheels
         run: cibuildwheel --output-dir wheelhouse
       - name: Publish wheels
