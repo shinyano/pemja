@@ -6,6 +6,11 @@ on:
     branches:
       - release/build_wheel
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
