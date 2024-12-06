@@ -65,7 +65,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.cibw_arch }}
           CIBW_ENABLE: cpython-prerelease cpython-freethreading
           CIBW_ENVIRONMENT: "SETUPTOOLS_USE_DISTUTILS=stdlib"
-          CIBW_BEFORE_BUILD: python -m pip install --upgrade setuptools && python -m pip list
+          CIBW_BEFORE_BUILD: python -m pip install "setuptools==67.8.0" wheel && python -m pip list
 
       - uses: actions/upload-artifact@v4
         with:
@@ -74,16 +74,14 @@ jobs:
 
 
   build_wheels_win:
-    name: Build python wheel for ${{ matrix.python }}-Windows
-    runs-on: ${{ matrix.buildplat[0] }}
+    name: Build python wheel for Windows
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-latest
-            cibw_arch: amd64
+            cibw_arch: x86 AMD64
             build: "cp3{8,9,10,11,12,13}*"
-            buildplat: [windows-latest, win_amd64]
-            python: ["cp38", "cp39", "cp310", "cp311", "cp312", "cp313"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -106,10 +104,11 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.22.0
         env:
-          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          CIBW_BUILD: ${{ matrix.build }}
+          CIBW_ARCHS: ${{ matrix.cibw_arch }}
           CIBW_ENABLE: cpython-prerelease cpython-freethreading
           CIBW_ENVIRONMENT: "SETUPTOOLS_USE_DISTUTILS=stdlib"
-          CIBW_BEFORE_BUILD: python -m pip install --upgrade setuptools && python -m pip list
+          CIBW_BEFORE_BUILD: python -m pip install "setuptools==67.8.0" wheel && python -m pip list
 
       - uses: actions/upload-artifact@v4
         with:
