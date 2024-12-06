@@ -41,6 +41,8 @@ jobs:
       matrix:
         include:
            - os: macos-latest
+             cibw_arch: arm64
+             build: "cp3{8,9,10,11,12,13}*"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -56,7 +58,7 @@ jobs:
           python-version: '3.x'
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.0 p
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: ${{ matrix.build }}
           CIBW_ARCHS: ${{ matrix.cibw_arch }}
@@ -72,7 +74,7 @@ jobs:
 
   build_wheels_win:
     name: Build python wheel for ${{ matrix.python }}-Windows
-    runs-on: ${{ matrix.buildplat[0] }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
