@@ -9,3 +9,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel.macos]
 archs = "x86_64 arm64"
+
+[tool.cibuildwheel.windows]
+build = "cp3{8,9,10,11,12,13}*"
+archs = "AMD64"
+enable = ["cpython-freethreading"]
