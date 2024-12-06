@@ -24,17 +24,15 @@ from setuptools.command.build_ext import build_ext as old_build_ext
 
 from setuptools import setup, Extension
 
-if sys.version_info < (3, 8):
-    print('Python versions prior to 3.7 are not supported for PemJa.',
-          file=sys.stderr)
-    sys.exit(-1)
+from packaging import version
+
+if version.parse('.'.join(map(str, sys.version_info[:2]))) < version.parse('3.8'):
+    sys.exit('Python versions prior to 3.8 are not supported for PemJa.')
 
 if sys.version_info >= (3, 12):
-    fmt = "Pemja may not yet support Python {}.{}."
     warnings.warn(
-        fmt.format(*sys.version_info[:2]),
+        f"Pemja may not yet support Python {sys.version_info[0]}.{sys.version_info[1]}.",
         RuntimeWarning)
-    del fmt
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
 version_file = os.path.join(this_directory, 'src/main/python/pemja/version.py')
@@ -71,14 +69,13 @@ def get_java_home():
 
 
 def is_osx():
-    return 'macosx' in sysconfig.get_platform()
-
+    return sys.platform.startswith('darwin')
 
 def is_bsd():
-    return 'bsd' in sysconfig.get_platform()
+    return sys.platform.startswith('freebsd')
 
 def is_windows():
-    return 'win' in sysconfig.get_platform()
+    return sys.platform.startswith('win')
 
 
 def get_python_libs():
@@ -176,25 +173,20 @@ def get_src_include():
     return ['src/main/c/Include']
 
 
-def _is_using_gcc(obj):
-    is_gcc = False
-    if obj.compiler.compiler_type == 'unix':
-        cc = sysconfig.get_config_var("CC")
-        if not cc:
-            cc = ""
-        is_gcc = "gcc" in cc
-    return is_gcc
-
-
 class build_ext(old_build_ext):
     def build_extension(self, ext):
-        if _is_using_gcc(self):
-            if '-std=c99' not in ext.extra_compile_args:
+        compiler = self.compiler
+        if hasattr(compiler, 'compiler_type') and compiler.compiler_type == 'unix':
+            # using gcc
+            cc = sysconfig.get_config_var("CC")
+            if not cc:
+                cc = ""
+            if "gcc" in cc and '-std=c99' not in ext.extra_compile_args:
                 ext.extra_compile_args.append('-std=c99')
-        old_build_ext.build_extension(self, ext)
+        super().build_extension(ext)
 
     def run(self):
-        old_build_ext.run(self)
+        super().run()
         if is_windows():
             for lib in self.get_outputs():
                 dll = lib.replace('.pyd', '.dll')
