@@ -20,7 +20,7 @@ import os
 import sys
 import sysconfig
 import warnings
-from distutils.command.build_ext import build_ext as old_build_ext
+from setuptools.command.build_ext import build_ext as old_build_ext
 
 from setuptools import setup, Extension
 
@@ -60,14 +60,14 @@ def get_java_home():
         return _java_home
 
     env_home = os.environ.get('JAVA_HOME')
-    if env_home:
-        if os.path.exists(env_home):
-            _java_home = env_home
-            return env_home
-        else:
-            print('Path {0} indicated by JAVA_HOME does not exist.'.format(env_home),
-                  file=sys.stderr)
-            sys.exit(-1)
+    # 依赖于JAVA_HOME，因此，它不能为空，也不能不存在
+    if env_home is not None and os.path.exists(env_home):
+        _java_home = env_home
+        return env_home
+    else:
+        print('Path {0} indicated by JAVA_HOME does not exist.'.format(env_home),
+              file=sys.stderr)
+        sys.exit(-1)
 
 
 def is_osx():
@@ -200,6 +200,10 @@ class build_ext(old_build_ext):
                 dll = lib.replace('.pyd', '.dll')
                 self.copy_file(lib, dll)
 
+macros = []
+if sysconfig.get_config_var("Py_GIL_DISABLED"):
+    print("gil disabled")
+    macros.append(("Py_GIL_DISABLED", 1))
 
 extensions = ([
     Extension(
@@ -209,14 +213,16 @@ extensions = ([
         library_dirs = get_java_lib_folders(),
         extra_link_args=get_java_linker_args(),
         include_dirs=get_java_include() + ['src/main/c/pemja/core/include'],
-        language=3),
+        language="c",
+        define_macros=macros),
     Extension(
         name="pemja_utils",
         sources=get_files('src/main/c/pemja/utils', '.c'),
         library_dirs = get_java_lib_folders(),
         extra_link_args=get_java_linker_args(),
         include_dirs=get_java_include() + ['src/main/c/pemja/utils/include'],
-        language=3)
+        language="c",
+        define_macros=macros)
 ])
 
 PACKAGE_DATA = {
@@ -228,19 +234,19 @@ PACKAGE_DIR = {
 }
 
 setup(
-    name='pemja',
+    name='pemjax',
     version=VERSION,
     packages=["pemja"],
     include_package_data=True,
     package_dir=PACKAGE_DIR,
     package_data=PACKAGE_DATA,
-    author='Apache Software Foundation',
+    author='THU IGinX',
     license='https://www.apache.org/licenses/LICENSE-2.0',
-    author_email='hxbks2ks@gmail.com',
+    author_email='TSIginX@gmail.com',
     python_requires='>=3.8',
     install_requires=['find-libpython'],
     cmdclass={'build_ext': build_ext},
-    description='PemJa',
+    description='PemJaX',
     long_description=long_description,
     long_description_content_type='text/markdown',
     zip_safe=False,
@@ -251,7 +257,10 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: Implementation :: CPython',
         'Operating System :: Unix',
+        'Operating System :: Microsoft :: Windows',
         'Operating System :: MacOS', ],
     ext_modules=extensions)

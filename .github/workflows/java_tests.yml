@@ -18,8 +18,6 @@
 name: Java tests
 
 on:
-  schedule:
-    - cron: '10 2 * * *'
   push:
     branches: [ main ]
   pull_request:
