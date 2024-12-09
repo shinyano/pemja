@@ -6,31 +6,14 @@ on:
     branches:
       - release/build_wheel
   pull_request:
+    branches:
+      - main
+      - release/build_wheel
 jobs:
-  build_source:
-    runs-on: ubuntu-latest
-    name: Build python source distribution
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Install python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.11
-      - name: Get build dependencies
-        working-directory: ./dev
-        run: python -m pip install -r dev-requirements.txt
-      - name: Build source
-        run: python setup.py sdist
-      - name: Upload sources as artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: source_package
-          path: ./dist/
-
   build_wheels_linux:
     name: Build python wheels on Linux
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -40,21 +23,26 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
       - name: Build wheel
-        run: bash dev/build-wheels.sh
+        run: |
+          chmod +x dev/build-wheels.sh
+          chmod +x dev/lint-python.sh
+          bash dev/build-wheels.sh
       - name: Upload wheels as artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: wheel_ubuntu-20.04
           path: ./dist/
 
   build_wheels_mac:
-    name: Build python wheel for ${{ matrix.python }}-Mac
-    runs-on: ${{ matrix.buildplat[0] }}
+    name: Build python wheel for ${{ matrix.os }}-Mac
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        buildplat:
-          - [macos-latest, macosx_*]
-        python: ["cp38", "cp39", "cp310", "cp311"]
+        include:
+          - os: macos-latest
+            cibw_arch: arm64
+            build: "cp3{8,9,10,11,12,13}*"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -65,29 +53,33 @@ jobs:
           distribution: 'adopt'
 
       # Used to push the built wheels
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.22.0
         env:
-          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          CIBW_BUILD: ${{ matrix.build }}
+          CIBW_ARCHS: ${{ matrix.cibw_arch }}
+          CIBW_ENABLE: cpython-prerelease cpython-freethreading
+          CIBW_BEFORE_BUILD: python -m pip install "setuptools==67.8.0" "wheel==0.40.0" && python -m pip list
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.python }}-${{ startsWith(matrix.buildplat[1], 'macosx') && 'macosx' || matrix.buildplat[1] }}
+          name: wheel_macos
           path: ./wheelhouse/*.whl
 
 
   build_wheels_win:
-    name: Build python wheel for ${{ matrix.python }}-Windows
-    runs-on: ${{ matrix.buildplat[0] }}
+    name: Build python wheel for Windows
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        buildplat:
-          - [windows-latest, win_amd64]
-        python: ["cp38", "cp39", "cp310", "cp311"]
+        include:
+          - os: windows-latest
+            cibw_arch: AMD64
+            build: "cp3{8,9,10,11,12,13}*"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -103,18 +95,21 @@ jobs:
           echo $JAVA_HOME
 
       # Used to push the built wheels
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env:
-          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          CIBW_BUILD: ${{ matrix.build }}
+          CIBW_ARCHS: ${{ matrix.cibw_arch }}
+          CIBW_ENABLE: cpython-prerelease cpython-freethreading
+          CIBW_BEFORE_BUILD: python -m pip install setuptools wheel setuptools_scm && python -m pip list
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.python }}-${{ startsWith(matrix.buildplat[1], 'win') && 'win_amd64' || matrix.buildplat[1] }}
+          name: wheel_win
           path: ./wheelhouse/*.whl
 
 

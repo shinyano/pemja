@@ -157,6 +157,11 @@ pemja_module_init(JNIEnv* env)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    // support free-thread in python3.13
+    PyUnstable_Module_SetGIL(pemja_module, Py_MOD_GIL_NOT_USED);
+#endif
+
     sys_modules = PyImport_GetModuleDict();
     if (PyDict_SetItemString(sys_modules, "_pemja", pemja_module) == -1) {
         (*env)->ThrowNew(env, JILLEGAL_STATE_EXEC_TYPE,
@@ -313,6 +318,11 @@ JcpPy_Initialize(JNIEnv *env)
         (*env)->ThrowNew(env, JILLEGAL_STATE_EXEC_TYPE, "Failed to create `redirection` module.");
         goto EXIT;
     }
+
+#ifdef Py_GIL_DISABLED
+    // support free-thread in python3.13
+    PyUnstable_Module_SetGIL(redirection_module, Py_MOD_GIL_NOT_USED);
+#endif
 
     sys_modules = PyImport_GetModuleDict();
     if (PyDict_SetItemString(sys_modules, "redirection", redirection_module) == -1) {

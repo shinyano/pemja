@@ -217,37 +217,61 @@ function install_miniconda() {
 
 # Install some kinds of py env.
 function install_py_env() {
-    py_env=("3.8" "3.9" "3.10" "3.11")
-    for ((i=0;i<${#py_env[@]};i++)) do
-        if [[ -d "$CURRENT_DIR/.conda/envs/${py_env[i]}" ]]; then
-            rm -rf "$CURRENT_DIR/.conda/envs/${py_env[i]}"
-            if [[ $? -ne 0 ]]; then
-                echo "rm -rf $CURRENT_DIR/.conda/envs/${py_env[i]} failed, please \
-                rm -rf $CURRENT_DIR/.conda/envs/${py_env[i]} manually.\
-                Then retry to exec the script."
+    py_env=("3.8" "3.9" "3.10" "3.11" "3.12" "3.13" "3.13t")
+
+    # build conda create command
+    build_install_command() {
+        local version=$1
+        local base_cmd="$CONDA_PATH create --name ${version} -y -q"
+
+        case $version in
+            "3.13"|"3.13t")
+                # 3.13 haven't been supported by conda yet, using conda-forge
+                ${CONDA_PATH} config --add channels conda-forge
+                ${CONDA_PATH} config --set channel_priority flexible
+                if [[ $version == "3.13t" ]]; then
+                    # free threading mode
+                    echo "$base_cmd python=3.13 python-freethreading -c conda-forge/label/python_rc -c conda-forge"
+                else
+                    echo "$base_cmd python=${version} -c conda-forge/label/python_rc -c conda-forge"
+                fi
+                ;;
+            *)
+                echo "$base_cmd python=${version}"
+                ;;
+        esac
+    }
+
+    for version in "${py_env[@]}"; do
+        local env_path="$CURRENT_DIR/.conda/envs/${version}"
+        if [[ -d "$env_path" ]]; then
+            if ! rm -rf "$env_path"; then
+                echo "Failed to remove $env_path, please remove it manually and retry."
                 exit 1
             fi
         fi
-        print_function "STEP" "installing python${py_env[i]}..."
+        print_function "STEP" "installing python${version}..."
+
+        install_command=$(build_install_command "$version")
+
         max_retry_times=3
         retry_times=0
-        install_command="$CONDA_PATH create --name ${py_env[i]} -y -q python=${py_env[i]}"
-        ${install_command} 2>&1 >/dev/null
-        status=$?
-        while [[ ${status} -ne 0 ]] && [[ ${retry_times} -lt ${max_retry_times} ]]; do
-            retry_times=$((retry_times+1))
-            # sleep 3 seconds and then reinstall.
-            sleep 3
-            echo "conda install ${py_env[i]} retrying ${retry_times}/${max_retry_times}"
+        status=1
+        until [[ $status -eq 0 ]] || [[ $retry_times -eq $max_retry_times ]]; do
+            if [[ $retry_times -gt 0 ]]; then
+                echo "conda install ${version} retrying ${retry_times}/${max_retry_times}"
+                sleep 3
+            fi
             ${install_command} 2>&1 >/dev/null
             status=$?
+            ((retry_times++))
         done
-        if [[ ${status} -ne 0 ]]; then
-            echo "conda install ${py_env[i]} failed after retrying ${max_retry_times} times.\
-            You can retry to execute the script again."
+        if [[ $status -ne 0 ]]; then
+            echo "conda install ${version} failed after retrying ${max_retry_times} times."
+            echo "You can retry to execute the script again."
             exit 1
         fi
-        print_function "STEP" "install python${py_env[i]}... [SUCCESS]"
+        print_function "STEP" "install python${version}... [SUCCESS]"
     done
 }
 
@@ -585,7 +609,7 @@ usage: $0 [options]
                 so do not use this option with -e,-i simultaneously.
 Examples:
   ./lint-python -s basic        =>  install environment with basic components.
-  ./lint-python -s py_env       =>  install environment with python env(3.8,3.9,3.10,3.11).
+  ./lint-python -s py_env       =>  install environment with python env(3.8,3.9,3.10,3.11,3.12,3.13,3.13t(freethreading)).
   ./lint-python -s all          =>  install environment with all components such as python env,tox,flake8,sphinx,mypy etc.
   ./lint-python -s tox,flake8   =>  install environment with tox,flake8.
   ./lint-python -s tox -f       =>  reinstall environment with tox.

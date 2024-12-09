@@ -19,9 +19,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.alibaba</groupId>
+    <groupId>cn.edu.tsinghua.iginx</groupId>
     <artifactId>pemja</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.2.0</version>
 
     <packaging>jar</packaging>
 
@@ -45,34 +45,14 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
     <distributionManagement>
-        <snapshotRepository>
-            <id>snapshot</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-        </snapshotRepository>
         <repository>
-            <id>release</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>local-repo-release</id>
+            <name>GitHub Release</name>
+            <url>file://${project.basedir}/maven-repo</url>
         </repository>
     </distributionManagement>
-
-    <developers>
-        <developer>
-            <id>huangxingbo</id>
-            <name>huangxingbo</name>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:git@github.com:alibaba/pemja.git</connection>
-        <developerConnection>scm:git:git@github.com:alibaba/pemja.git</developerConnection>
-        <url>https://github.com/alibaba/pemja</url>
-    </scm>
-
-    <issueManagement>
-        <system>Github</system>
-        <url>https://github.com/alibaba/pemja/issues</url>
-    </issueManagement>
 
     <dependencies>
         <dependency>
@@ -101,6 +81,7 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <encoding>UTF8</encoding>
                 </configuration>
             </plugin>
 
