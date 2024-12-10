@@ -38,6 +38,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [macos-latest, windows-latest]
         build: ["cp3{8,9,10,11,12,13}*"]
         include:
           - os: macos-latest
