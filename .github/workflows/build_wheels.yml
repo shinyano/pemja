@@ -18,10 +18,8 @@
 name: Build python source distribution and wheels
 
 on:
-  push:
-    branches: [ '*' ]
-  pull_request:
-    branches: [ main ]
+  # avoid auto runs
+  workflow_dispatch:
 
 jobs:
   build_source:

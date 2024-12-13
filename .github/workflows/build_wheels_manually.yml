@@ -1,14 +1,9 @@
 name: Build and Publish Wheels
 
 on:
+  # avoid auto runs which would cost fortune
   workflow_dispatch:
-  push:
-    branches:
-      - release/build_wheel
-  pull_request:
-    branches:
-      - main
-      - release/build_wheel
+
 jobs:
   build_wheels_linux:
     name: Build python wheels on Linux
@@ -34,7 +29,7 @@ jobs:
           path: ./dist/
 
   build_wheels_mac_win:
-    name: Build python wheel for ${{ matrix.os }}
+    name: Build python wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

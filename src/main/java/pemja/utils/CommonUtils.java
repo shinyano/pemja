@@ -123,7 +123,9 @@ public class CommonUtils {
                     }
                 }
             }
-            throw new RuntimeException("Failed to find PemJa Library");
+            throw new RuntimeException(
+                    "Failed to find PemJa Library in Python packages."
+                            + "Please check site-packages dir for shared libraries.");
         }
     }
 

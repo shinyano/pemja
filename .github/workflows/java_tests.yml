@@ -18,10 +18,8 @@
 name: Java tests
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  # avoid auto runs
+  workflow_dispatch:
 
 jobs:
   tests:
