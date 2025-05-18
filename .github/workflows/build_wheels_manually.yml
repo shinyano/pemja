@@ -10,10 +10,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu22.04, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-latest, windows-latest]
         build: ["cp3{8,9,10,11,12,13}*"]
         include:
-          - os: ubuntu22.04
+          - os: ubuntu-22.04
             cibw_arch: x86_64
             plat: manylinux_x86_64
           - os: macos-latest
