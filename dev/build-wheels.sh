@@ -35,7 +35,7 @@ for ((i=0;i<${#py_env[@]};i++)) do
     if [[ "$(uname)" == "Darwin" ]]; then
       "${PY_ENV_DIR}"/${py_env[i]}/bin/python setup.py bdist_wheel
     else
-      "${PY_ENV_DIR}"/${py_env[i]}/bin/python setup.py bdist_wheel --plat-name manylinux1_x86_64
+      "${PY_ENV_DIR}"/${py_env[i]}/bin/python setup.py bdist_wheel --plat-name manylinux2014_x86_64
     fi
 done
 ## see the result
