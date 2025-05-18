@@ -15,10 +15,13 @@ jobs:
         include:
           - os: ubuntu22.04
             cibw_arch: x86_64
+            plat: manylinux_x86_64
           - os: macos-latest
             cibw_arch: arm64
+            plat: macosx_arm64
           - os: windows-latest
             cibw_arch: AMD64
+            plat: win_amd64
 
     steps:
       - name: Checkout code
@@ -44,7 +47,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.22.0
         env:
-          CIBW_BUILD: ${{ matrix.build }}
+          CIBW_BUILD: ${{ matrix.build }}-${{ matrix.plat }}
           CIBW_ARCHS: ${{ matrix.cibw_arch }}
           CIBW_ENABLE: cpython-freethreading
           CIBW_BEFORE_BUILD: python -m pip install setuptools wheel && python -m pip list
